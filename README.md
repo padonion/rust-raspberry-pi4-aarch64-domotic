@@ -146,3 +146,146 @@ ubuntu@ubuntu:~$
 ```
 
 It works!
+
+## Debugging a binary on the Raspberry with our laptop and ```gdb```
+
+To be able to practice remote debugging, we will disable our firewall.
+> do not forget to re-enable it when you are done
+
+```bash
+ubuntu@ubuntu:~$ sudo ufw disable
+```
+
+First we need to install our ```gdbserver``` on our Raspberry:
+```bash
+ubuntu@ubuntu:~$ sudo apt install gdbserver
+```
+
+We can now start the debugging on the Raspberry with the following command:
+```bash
+ubuntu@ubuntu:~$ gdbserver :2345 ./hello-world 
+Process ./hello-world created; pid = 2509
+Listening on port 2345
+```
+
+Now on the laptop, we need to install ```gdb-multiarch``` because remember that we are cross compiling, and therefore the binary we are going to debug is not an intel x64 format.
+
+On the development machine (my laptop):
+```bash
+sudo apt install gdb-multiarch
+```
+
+We can now launch the debugger from our laptop:
+```bash
+gdb-multiarch target/aarch64-unknown-linux-gnu/debug/hello-world
+```
+
+We are now in the debugger command prompt:
+```
+GNU gdb (Ubuntu 9.1-0ubuntu1) 9.1
+Copyright (C) 2020 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Type "show copying" and "show warranty" for details.
+This GDB was configured as "x86_64-linux-gnu".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<http://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+    <http://www.gnu.org/software/gdb/documentation/>.
+
+For help, type "help".
+Type "apropos word" to search for commands related to "word".
+(gdb)
+```
+
+We add the source folder:
+```
+(gdb) directory src/
+Source directories searched: /home/padonion/hello-world/src:$cdir:$cwd
+(gdb) 
+```
+
+We then connect to the Raspberry to take the execution there in control:
+```
+(gdb) target remote 192.168.1.29:2345
+Remote debugging using 192.168.1.29:2345
+Reading /lib/ld-linux-aarch64.so.1 from remote target...
+warning: File transfers from remote targets can be slow. Use "set sysroot" to access files locally instead.
+Reading /lib/ld-linux-aarch64.so.1 from remote target...
+Reading symbols from target:/lib/ld-linux-aarch64.so.1...
+Reading /lib/ld-2.31.so from remote target...
+Reading /lib/.debug/ld-2.31.so from remote target...
+Reading /usr/lib/debug//lib/ld-2.31.so from remote target...
+Reading /usr/lib/debug/lib//ld-2.31.so from remote target...
+Reading target:/usr/lib/debug/lib//ld-2.31.so from remote target...
+(No debugging symbols found in target:/lib/ld-linux-aarch64.so.1)
+0x0000fffff7fcd0c0 in ?? () from target:/lib/ld-linux-aarch64.so.1
+(gdb) 
+```
+And you will see the confirmation on the Raspberry:
+```
+ubuntu@ubuntu:~$ gdbserver :2345 ./hello-world 
+Process ./hello-world created; pid = 2964
+Listening on port 2345
+Remote debugging from host 192.168.1.20, port 58414
+```
+
+**TODO**: add list source file. So far no success.
+
+If I load an x64 binary, I can list the source:
+
+```
+hello-world$ gdb-multiarch target/debug/hello-world
+GNU gdb (Ubuntu 9.1-0ubuntu1) 9.1
+Copyright (C) 2020 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Type "show copying" and "show warranty" for details.
+This GDB was configured as "x86_64-linux-gnu".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<http://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+    <http://www.gnu.org/software/gdb/documentation/>.
+
+For help, type "help".
+Type "apropos word" to search for commands related to "word"...
+Reading symbols from target/debug/hello-world...
+warning: Missing auto-load script at offset 0 in section .debug_gdb_scripts
+of file /home/padonion/hello-world/target/debug/hello-world.
+Use `info auto-load python-scripts [REGEXP]' to list them.
+(gdb) list
+1	fn main() {
+2	    println!("Hello, world!");
+3	}
+(gdb) 
+```
+
+But if I load an aarch64 binary, I get a Core Dump:
+```
+hello-world$ gdb-multiarch target/aarch64-unknown-linux-gnu/debug/hello-world
+GNU gdb (Ubuntu 9.1-0ubuntu1) 9.1
+Copyright (C) 2020 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Type "show copying" and "show warranty" for details.
+This GDB was configured as "x86_64-linux-gnu".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<http://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+    <http://www.gnu.org/software/gdb/documentation/>.
+
+For help, type "help".
+Type "apropos word" to search for commands related to "word"...
+Reading symbols from target/aarch64-unknown-linux-gnu/debug/hello-world...
+warning: Missing auto-load script at offset 0 in section .debug_gdb_scripts
+of file /home/padonion/hello-world/target/aarch64-unknown-linux-gnu/debug/hello-world.
+Use `info auto-load python-scripts [REGEXP]' to list them.
+(gdb) list
+Aborted (core dumped)
+```
