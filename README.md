@@ -44,7 +44,7 @@ ubuntu@ubuntu:~$ uname -a
 Linux ubuntu 5.4.0-1008-raspi #8-Ubuntu SMP Wed Apr 8 11:13:06 UTC 2020 aarch64 aarch64 aarch64 GNU/Linux
 ```
 ```file /usr/bin/yes``` confirms that binaries are 64bits:
-```
+```sh
 ubuntu@ubuntu:~$ file /usr/bin/yes
 /usr/bin/yes: ELF 64-bit LSB shared object, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, BuildID[sha1]=953226318f1646263799b28ffc77e0e9e2d88baf, for GNU/Linux 3.7.0, stripped
 ```
@@ -54,12 +54,12 @@ ubuntu@ubuntu:~$ file /usr/bin/yes
 We need to add ```gpio``` group to the ubuntu and the permissions to the gpio devices to make our life easier (we could run all our apps but that would not be very serious).
 
 First, add ```gpio``` group and add user ```ubuntu``` to it:
-```
+```sh
 sudo groupadd -f -r gpio
 sudo adduser ubuntu gpio
 ```
 Second, we need to create a ```udev``` rule to set this group to the devices by creating ```/etc/udev/rules.d/99-gpio.rules```:
-```
+```sh
 ubuntu@ubuntu:~$ cat /etc/udev/rules.d/99-gpio.rules 
 SUBSYSTEM=="bcm2835-gpiomem", KERNEL=="gpiomem", GROUP="gpio", MODE="0660"
 SUBSYSTEM=="gpio", KERNEL=="gpiochip*", GROUP="gpio", MODE="0660"
@@ -71,7 +71,297 @@ SUBSYSTEM=="gpio", KERNEL=="gpio*", ACTION=="add", PROGRAM="/bin/sh -c 'chown ro
 
 Yes, our raspberry will be in the world and need some protection.
 > Do not forget to add the ssh authorisation before activating the firewall, otherwise you will loose connection and all possibility to remote-connect!
-```
+```sh
 sudo ufw allow ssh
 sudo ufw enable
 ```
+
+## Installation and configuration of 'rust' on our development platform
+
+In all my examples, I will use my laptop as development pltaform and send only the binaries to the Raspberry PI (I want my raspberry to be clean, not as a dev platform).
+
+I will use ```rust``` as development language. Why ? Because:
+
+- it is fun to learn a new language
+- ```rust``` has an interesting concept of memory management and is very secure
+- ```rust``` has low level programation capability
+- ```rust``` create a standalone compiled binary
+- [finally I let you read all the other reasons there](https://www.rust-lang.org/).
+
+To install it on your laptop folling the installation instruction: [Install Rust](https://www.rust-lang.org/tools/install)
+
+Now we need to add the cross-compilation for ```aarch64```. For linux (Ubuntu to be more precise) you have to install first the compiler tools with this command line (I let you figure out how to install aarch64 compiler on your OS):
+```sh
+sudo apt install gcc-aarch64-linux-gnu
+```
+
+Then you have to install ```rust``` target with the following command line:
+```sh
+rustup target add aarch64-unknown-linux-gnu
+```
+
+And finally you have to tell ```cargo``` what to use for the target in the file ```~/.cargo/config```:
+
+```toml
+[target.aarch64-unknown-linux-gnu]
+linker = "aarch64-linux-gnu-gcc"
+```
+
+> if the file ```~/.cargo/config``` does not exist yet, create it.
+
+This is it. Your development platform is ready.
+
+Lets go for an example, create a ```hello-world``` wherever you want with the following line:
+
+```
+cargo new --bin hello-world
+```
+
+Move in this project's folder and compile it for aarch64:
+
+```
+cd hello-world
+cargo build --target aarch64-unknown-linux-gnu
+```
+
+Lets verify that the binary is compiled as we want:
+```bash
+file target/aarch64-unknown-linux-gnu/debug/hello-world
+```
+output:
+```
+target/aarch64-unknown-linux-gnu/debug/hello-world: ELF 64-bit LSB shared object, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, BuildID[sha1]=b67a7f69372f533a85b329095443f4dccb192a81, for GNU/Linux 3.7.0, with debug_info, not stripped
+```
+
+Now we have to send this file to our Raspberry with ssh copy:
+```
+scp target/aarch64-unknown-linux-gnu/debug/hello-world ubuntu@XXX.XXX.XXX.XXX:~
+```
+
+And inside a ```ssh``` session on our Raspberry we can execute it:
+```bash
+ubuntu@ubuntu:~$ ./hello-world 
+Hello, world!
+ubuntu@ubuntu:~$ 
+```
+
+It works!
+
+## Debugging a binary on the Raspberry with our laptop and ```gdbserver```
+
+To be able to practice remote debugging, we will disable our firewall.
+> do not forget to re-enable it when you are done
+
+```bash
+ubuntu@ubuntu:~$ sudo ufw disable
+```
+
+First we need to install our ```gdbserver``` on our Raspberry:
+```bash
+ubuntu@ubuntu:~$ sudo apt install gdbserver
+```
+
+We can now start the debugging on the Raspberry with the following command:
+```bash
+ubuntu@ubuntu:~$ gdbserver :2345 ./hello-world 
+Process ./hello-world created; pid = 2509
+Listening on port 2345
+```
+
+Now on the laptop, we need to install ```gdb-multiarch``` because remember that we are cross compiling, and therefore the binary we are going to debug is not an intel x64 format.
+
+On the development machine (my laptop):
+```bash
+sudo apt install gdb-multiarch
+```
+
+We can now launch the debugger from our laptop:
+```bash
+gdb-multiarch target/aarch64-unknown-linux-gnu/debug/hello-world
+```
+
+We are now in the debugger command prompt:
+```
+GNU gdb (Ubuntu 9.1-0ubuntu1) 9.1
+Copyright (C) 2020 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Type "show copying" and "show warranty" for details.
+This GDB was configured as "x86_64-linux-gnu".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<http://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+    <http://www.gnu.org/software/gdb/documentation/>.
+
+For help, type "help".
+Type "apropos word" to search for commands related to "word".
+(gdb)
+```
+
+We add the source folder:
+```
+(gdb) directory src/
+Source directories searched: /home/padonion/hello-world/src:$cdir:$cwd
+(gdb) 
+```
+
+We then connect to the Raspberry to take the execution there in control:
+```
+(gdb) target remote 192.168.1.29:2345
+Remote debugging using 192.168.1.29:2345
+Reading /lib/ld-linux-aarch64.so.1 from remote target...
+warning: File transfers from remote targets can be slow. Use "set sysroot" to access files locally instead.
+Reading /lib/ld-linux-aarch64.so.1 from remote target...
+Reading symbols from target:/lib/ld-linux-aarch64.so.1...
+Reading /lib/ld-2.31.so from remote target...
+Reading /lib/.debug/ld-2.31.so from remote target...
+Reading /usr/lib/debug//lib/ld-2.31.so from remote target...
+Reading /usr/lib/debug/lib//ld-2.31.so from remote target...
+Reading target:/usr/lib/debug/lib//ld-2.31.so from remote target...
+(No debugging symbols found in target:/lib/ld-linux-aarch64.so.1)
+0x0000fffff7fcd0c0 in ?? () from target:/lib/ld-linux-aarch64.so.1
+(gdb) 
+```
+And you will see the confirmation on the Raspberry:
+```
+ubuntu@ubuntu:~$ gdbserver :2345 ./hello-world 
+Process ./hello-world created; pid = 2964
+Listening on port 2345
+Remote debugging from host 192.168.1.20, port 58414
+```
+
+**TODO**: add list source file. So far no success.
+
+If I load an x64 binary, I can list the source:
+
+```
+hello-world$ gdb-multiarch target/debug/hello-world
+GNU gdb (Ubuntu 9.1-0ubuntu1) 9.1
+Copyright (C) 2020 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Type "show copying" and "show warranty" for details.
+This GDB was configured as "x86_64-linux-gnu".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<http://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+    <http://www.gnu.org/software/gdb/documentation/>.
+
+For help, type "help".
+Type "apropos word" to search for commands related to "word"...
+Reading symbols from target/debug/hello-world...
+warning: Missing auto-load script at offset 0 in section .debug_gdb_scripts
+of file /home/padonion/hello-world/target/debug/hello-world.
+Use `info auto-load python-scripts [REGEXP]' to list them.
+(gdb) list
+1	fn main() {
+2	    println!("Hello, world!");
+3	}
+(gdb) 
+```
+
+But if I load an aarch64 binary, I get a Core Dump:
+```
+hello-world$ gdb-multiarch target/aarch64-unknown-linux-gnu/debug/hello-world
+GNU gdb (Ubuntu 9.1-0ubuntu1) 9.1
+Copyright (C) 2020 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Type "show copying" and "show warranty" for details.
+This GDB was configured as "x86_64-linux-gnu".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<http://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+    <http://www.gnu.org/software/gdb/documentation/>.
+
+For help, type "help".
+Type "apropos word" to search for commands related to "word"...
+Reading symbols from target/aarch64-unknown-linux-gnu/debug/hello-world...
+warning: Missing auto-load script at offset 0 in section .debug_gdb_scripts
+of file /home/padonion/hello-world/target/aarch64-unknown-linux-gnu/debug/hello-world.
+Use `info auto-load python-scripts [REGEXP]' to list them.
+(gdb) list
+Aborted (core dumped)
+```
+## First gpio test program
+
+For more information on the Raspberry Pi4 pinouts, you can take a look at:
+
+[Raspberry Pi pinout](https://pinout.xyz/)
+
+Relay board connection:
+
+For this experimentation we will plug the cable as follow:
+
+- The connector on the relay board (you can't plug it reverse)
+- The Black wire on the GND (pin 6 of Raspberry IOs connector)
+- The Red wire on the 3.3V (pin 1 of the Raspberry IOs connector)
+- The White wire on the GPIO23 (pin 16 of the Raspberry IOs connector)
+
+Lets move in the folder ```01-test-gpio``` for that purpose.
+
+```bash
+cd 01-test-gpio
+```
+
+We will use:
+
+- [rust_gpiozero](https://docs.rs/rust_gpiozero/0.2.0/rust_gpiozero/index.html) to manipulate the gpios on the Raspberry.
+- [std::thread](https://doc.rust-lang.org/std/thread/) to have access to sleep
+- [std::time](https://doc.rust-lang.org/std/time/index.html) to have access to seconds unit measurement.
+
+Reading the source file you will see that:
+
+- we create a constant for our pin #
+- we create a 1s duration variable
+- we create an accessor to the raspberry pin
+- we set the high level to be +3.3V
+- we loop 4 times
+    - we set the pin (3.3V)
+    - we wait 1 second
+    - we reset the pin (0V)
+    - we wait 1 second
+
+That's it! Lets build this example:
+
+```bash
+rust-raspberry-pi4-aarch64-domotic/01-test-gpio$ cargo build --target aarch64-unknown-linux-gnu
+   Compiling libc v0.2.69
+   Compiling lazy_static v1.4.0
+   Compiling rppal v0.11.3
+   Compiling rust_gpiozero v0.2.0
+   Compiling rp4-gpio-test v0.1.0 (/mnt/data/padonion/rust-projects/rust-raspberry-pi4-aarch64-domotic/01-test-gpio)
+    Finished dev [unoptimized + debuginfo] target(s) in 3.15s
+```
+
+Then transfer it to our Raspberry:
+
+```bash
+rust-raspberry-pi4-aarch64-domotic/01-test-gpio$ scp target/aarch64-unknown-linux-gnu/debug/rp4-gpio-test ubuntu@192.168.1.29:~
+ubuntu@192.168.1.29's password: 
+rp4-gpio-test
+```
+Now lets execute it in a ssh session:
+
+```bash
+ubuntu@ubuntu:~$ ./rp4-gpio-test 
+GPIO pin : 23
+GPIO active high : true
+GPIO ON (state: true)
+GPIO ON (state: false)
+GPIO ON (state: true)
+GPIO ON (state: false)
+GPIO ON (state: true)
+GPIO ON (state: false)
+GPIO ON (state: true)
+GPIO ON (state: false)
+ubuntu@ubuntu:~$ 
+```
+
+![Relay Blink](images/gpio-blink.gif)
