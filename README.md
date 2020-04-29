@@ -44,7 +44,7 @@ ubuntu@ubuntu:~$ uname -a
 Linux ubuntu 5.4.0-1008-raspi #8-Ubuntu SMP Wed Apr 8 11:13:06 UTC 2020 aarch64 aarch64 aarch64 GNU/Linux
 ```
 ```file /usr/bin/yes``` confirms that binaries are 64bits:
-```
+```sh
 ubuntu@ubuntu:~$ file /usr/bin/yes
 /usr/bin/yes: ELF 64-bit LSB shared object, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, BuildID[sha1]=953226318f1646263799b28ffc77e0e9e2d88baf, for GNU/Linux 3.7.0, stripped
 ```
@@ -54,12 +54,12 @@ ubuntu@ubuntu:~$ file /usr/bin/yes
 We need to add ```gpio``` group to the ubuntu and the permissions to the gpio devices to make our life easier (we could run all our apps but that would not be very serious).
 
 First, add ```gpio``` group and add user ```ubuntu``` to it:
-```
+```sh
 sudo groupadd -f -r gpio
 sudo adduser ubuntu gpio
 ```
 Second, we need to create a ```udev``` rule to set this group to the devices by creating ```/etc/udev/rules.d/99-gpio.rules```:
-```
+```sh
 ubuntu@ubuntu:~$ cat /etc/udev/rules.d/99-gpio.rules 
 SUBSYSTEM=="bcm2835-gpiomem", KERNEL=="gpiomem", GROUP="gpio", MODE="0660"
 SUBSYSTEM=="gpio", KERNEL=="gpiochip*", GROUP="gpio", MODE="0660"
@@ -71,7 +71,74 @@ SUBSYSTEM=="gpio", KERNEL=="gpio*", ACTION=="add", PROGRAM="/bin/sh -c 'chown ro
 
 Yes, our raspberry will be in the world and need some protection.
 > Do not forget to add the ssh authorisation before activating the firewall, otherwise you will loose connection and all possibility to remote-connect!
-```
+```sh
 sudo ufw allow ssh
 sudo ufw enable
 ```
+
+## Installation and configuration of 'rust' on our development platform
+
+In all my examples, I will use my laptop as development pltaform and send only the binaries to the Raspberry PI (I want my raspberry to be clean, not as a dev platform).
+
+I will use ```rust``` as development language. Why ? Because:
+
+- it is fun to learn a new language
+- it has an interesting concept of memory management and is very secure
+- it has low level capability
+- [finally I let you read all the reasons there](https://www.rust-lang.org/).
+
+To install it on your laptop folling the installation instruction: [Install Rust](https://www.rust-lang.org/tools/install)
+
+Now we need to add the cross-compilation for ```aarch64```. For linux (Ubuntu to be more precise) you have to install first the compiler tools with this command line (I let you figure out how to install aarch64 compiler on your OS):
+```sh
+sudo apt install gcc-aarch64-linux-gnu
+```
+
+Then you have to install ```rust``` target with the following command line:
+```sh
+rustup target add aarch64-unknown-linux-gnu
+```
+
+And finally you have to tell ```cargo``` what to use for the target in the file ```~/.cargo/config```:
+
+```toml
+[target.aarch64-unknown-linux-gnu]
+linker = "aarch64-linux-gnu-gcc"
+```
+
+> if the file ```~/.cargo/config``` does not exist yet, create it.
+
+This is it. Your development platform is ready.
+
+Lets go for an example, create a ```hello-world``` wherever you want with the following line:
+
+```
+cargo new --bin hello-world
+```
+
+Move in this project's folder and compile it for aarch64:
+
+```
+cd hello-world
+cargo build --target aarch64-unknown-linux-gnu
+```
+
+Lets verify that the binary is compiled as we want:
+```bash
+padonion@padonion$file target/aarch64-unknown-linux-gnu/debug/hello-world
+target/aarch64-unknown-linux-gnu/debug/hello-world: ELF 64-bit LSB shared object, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, BuildID[sha1]=b67a7f69372f533a85b329095443f4dccb192a81, for GNU/Linux 3.7.0, with debug_info, not stripped
+```
+
+Now we have to send this file to our Raspberry with ssh copy:
+```
+scp target/aarch64-unknown-linux-gnu/debug/hello-world ubuntu@XXX.XXX.XXX.XXX:~
+```
+
+And inside a ```ssh``` session on our Raspberry we can execute it:
+```bash
+ubuntu@ubuntu:~$ ./hello-world 
+Hello, world!
+ubuntu@ubuntu:~$ 
+```
+
+It works!
