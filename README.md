@@ -83,9 +83,10 @@ In all my examples, I will use my laptop as development pltaform and send only t
 I will use ```rust``` as development language. Why ? Because:
 
 - it is fun to learn a new language
-- it has an interesting concept of memory management and is very secure
-- it has low level capability
-- [finally I let you read all the reasons there](https://www.rust-lang.org/).
+- ```rust``` has an interesting concept of memory management and is very secure
+- ```rust``` has low level programation capability
+- ```rust``` create a standalone compiled binary
+- [finally I let you read all the other reasons there](https://www.rust-lang.org/).
 
 To install it on your laptop folling the installation instruction: [Install Rust](https://www.rust-lang.org/tools/install)
 
@@ -125,7 +126,10 @@ cargo build --target aarch64-unknown-linux-gnu
 
 Lets verify that the binary is compiled as we want:
 ```bash
-padonion@padonion$file target/aarch64-unknown-linux-gnu/debug/hello-world
+file target/aarch64-unknown-linux-gnu/debug/hello-world
+```
+output:
+```
 target/aarch64-unknown-linux-gnu/debug/hello-world: ELF 64-bit LSB shared object, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, BuildID[sha1]=b67a7f69372f533a85b329095443f4dccb192a81, for GNU/Linux 3.7.0, with debug_info, not stripped
 ```
 
