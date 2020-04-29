@@ -291,6 +291,19 @@ Aborted (core dumped)
 ```
 ## First gpio test program
 
+For more information on the Raspberry Pi4 pinouts, you can take a look at:
+
+[Raspberry Pi pinout](https://pinout.xyz/)
+
+Relay board connection:
+
+For this experimentation we will plug the cable as follow:
+
+- The connector on the relay board (you can't plug it reverse)
+- The Black wire on the GND (pin 6 of Raspberry IOs connector)
+- The Red wire on the 3.3V (pin 1 of the Raspberry IOs connector)
+- The White wire on the GPIO23 (pin 16 of the Raspberry IOs connector)
+
 Lets move in the folder ```01-test-gpio``` for that purpose.
 
 ```bash
@@ -302,10 +315,6 @@ We will use:
 - [rust_gpiozero](https://docs.rs/rust_gpiozero/0.2.0/rust_gpiozero/index.html) to manipulate the gpios on the Raspberry.
 - [std::thread](https://doc.rust-lang.org/std/thread/) to have access to sleep
 - [std::time](https://doc.rust-lang.org/std/time/index.html) to have access to seconds unit measurement.
-
-For more information on the Raspberry Pi4 pinouts, you can take a look at:
-
-[Raspberry Pi pinout](https://pinout.xyz/)
 
 Reading the source file you will see that:
 
