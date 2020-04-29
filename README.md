@@ -147,7 +147,7 @@ ubuntu@ubuntu:~$
 
 It works!
 
-## Debugging a binary on the Raspberry with our laptop and ```gdb```
+## Debugging a binary on the Raspberry with our laptop and ```gdbserver```
 
 To be able to practice remote debugging, we will disable our firewall.
 > do not forget to re-enable it when you are done
@@ -288,4 +288,69 @@ of file /home/padonion/hello-world/target/aarch64-unknown-linux-gnu/debug/hello-
 Use `info auto-load python-scripts [REGEXP]' to list them.
 (gdb) list
 Aborted (core dumped)
+```
+## First gpio test program
+
+Lets move in the folder ```01-test-gpio``` for that purpose.
+
+```bash
+cd 01-test-gpio
+```
+
+We will use:
+
+- [rust_gpiozero](https://docs.rs/rust_gpiozero/0.2.0/rust_gpiozero/index.html) to manipulate the gpios on the Raspberry.
+- [std::thread](https://doc.rust-lang.org/std/thread/) to have access to sleep
+- [std::time](https://doc.rust-lang.org/std/time/index.html) to have access to seconds unit measurement.
+
+For more information on the Raspberry Pi4 pinouts, you can take a look at:
+
+[Raspberry Pi pinout](https://pinout.xyz/)
+
+Reading the source file you will see that:
+
+- we create a constant for our pin #
+- we create a 1s duration variable
+- we create an accessor to the raspberry pin
+- we set the high level to be +3.3V
+- we loop 4 times
+    - we set the pin (3.3V)
+    - we wait 1 second
+    - we reset the pin (0V)
+    - we wait 1 second
+
+That's it! Lets build this example:
+
+```bash
+rust-raspberry-pi4-aarch64-domotic/01-test-gpio$ cargo build --target aarch64-unknown-linux-gnu
+   Compiling libc v0.2.69
+   Compiling lazy_static v1.4.0
+   Compiling rppal v0.11.3
+   Compiling rust_gpiozero v0.2.0
+   Compiling rp4-gpio-test v0.1.0 (/mnt/data/padonion/rust-projects/rust-raspberry-pi4-aarch64-domotic/01-test-gpio)
+    Finished dev [unoptimized + debuginfo] target(s) in 3.15s
+```
+
+Then transfer it to our Raspberry:
+
+```bash
+rust-raspberry-pi4-aarch64-domotic/01-test-gpio$ scp target/aarch64-unknown-linux-gnu/debug/rp4-gpio-test ubuntu@192.168.1.29:~
+ubuntu@192.168.1.29's password: 
+rp4-gpio-test
+```
+Now lets execute it in a ssh session:
+
+```bash
+ubuntu@ubuntu:~$ ./rp4-gpio-test 
+GPIO pin : 23
+GPIO active high : true
+GPIO ON (state: true)
+GPIO ON (state: false)
+GPIO ON (state: true)
+GPIO ON (state: false)
+GPIO ON (state: true)
+GPIO ON (state: false)
+GPIO ON (state: true)
+GPIO ON (state: false)
+ubuntu@ubuntu:~$ 
 ```
