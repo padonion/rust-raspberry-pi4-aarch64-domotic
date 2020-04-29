@@ -22,5 +22,6 @@ I decided to move forward with a Raspberry Pi 4 acting as an internet watchdog a
 - [Heat Sink **Do not forget it!**](https://www.digikey.com/product-detail/en/seeed-technology-co-ltd/110991329/1597-110991329-ND/10451888)
 - [Micro relay 110V-220V](https://www.digikey.com/product-detail/en/adafruit-industries-llc/4409/1528-4409-ND/10669532)
 - [Cable for micro-relay](https://www.digikey.com/product-detail/en/adafruit-industries-llc/3894/1528-2697-ND/9603620)
+- [Raspberry Pi 4 case](https://www.digikey.com/product-detail/en/raspberry-pi/RASPBERRY-PI-4-CASE-RED-WHITE/1690-RASPBERRYPI4CASERED-WHITE-ND/10258761)
 
-I give a link to digikey as a reference to the material I bought.
+I give a link to digikey as a reference to the material I bought (the case is optional, I don't know yet how I will mount all that together).
