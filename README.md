@@ -32,7 +32,7 @@ Our bench now:
 
 **The Operating System**:
 
-The Raspberry Pi4 is a 64bits ARM architecture. At this time, ```raspbian``` is limited to 32bits. One of the reason is because Broadcom is not not providing the 64bits version of the video core. But as we are not using the video output of our raspberry, I would say that I do not care about this part. Therefore I decided to move forward with the [Ubuntu 20.04 aarch64 available on the Ubuntu website](https://ubuntu.com/download/raspberry-pi/thank-you?version=20.04&architecture=arm64+raspi).
+The Raspberry Pi4 is a 64bits ARM architecture. At this time, ```raspbian``` is limited to 32bits. One of the reason is because Broadcom is not providing the 64bits version of the video core. But as we are not using the video output of our raspberry, I would say that I do not care about this part. Therefore I decided to move forward with the [Ubuntu 20.04 aarch64 available on the Ubuntu website](https://ubuntu.com/download/raspberry-pi/thank-you?version=20.04&architecture=arm64+raspi).
 
 There is nothing to do, except downloading the image, and following their tutorial to install it on a SD card.
 
@@ -51,7 +51,7 @@ ubuntu@ubuntu:~$ file /usr/bin/yes
 
 **Set ```gpio``` group and permission**:
 
-We need to add ```gpio``` group to the ubuntu and the permissions to the gpio devices to make our life easier (we could run all our apps but that would not be very serious).
+We need to add ```gpio``` group to the ubuntu and the permissions to the gpio devices to make our life easier (we could run all our apps with sudo but that would not be very serious).
 
 First, add ```gpio``` group and add user ```ubuntu``` to it:
 ```sh
