@@ -354,3 +354,5 @@ GPIO ON (state: true)
 GPIO ON (state: false)
 ubuntu@ubuntu:~$ 
 ```
+
+![Relay Blink](images/gpio-blink.gif)
