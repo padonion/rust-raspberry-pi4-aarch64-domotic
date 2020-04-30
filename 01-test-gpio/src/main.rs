@@ -11,8 +11,8 @@ fn main() {
     const BCM_GPIO_RELAY: u8 = 23;
 
     // create the GPIO object (mutable as we want to change the output)
-    let gpio = match Gpio::new() {
-        Ok(gpio) => gpio,
+    let gpios = match Gpio::new() {
+        Ok(gpios) => gpios,
         Err(msg) => {
             println!("Error: {}", msg);
             process::exit(1);
@@ -20,7 +20,7 @@ fn main() {
     };
 
     // retrieve the GPIO pin as an Output
-    let mut output = match gpio.get(BCM_GPIO_RELAY) {
+    let mut output = match gpios.get(BCM_GPIO_RELAY) {
         Ok(output) => output.into_output(),
         Err(msg) => {
             println!("Error: {}", msg);
