@@ -28,14 +28,14 @@ fn main() {
     for _ in 0..4 {
         // we activate the relay
         output.set_high();
-        println!("GPIO ON (state: {})", output.is_set_high());
+        println!("GPIO #{} HIGH (state: {})", BCM_GPIO_RELAY, output.is_set_high());
 
         // we wait for 1s
         thread::sleep(one_sec);
 
         // we deactivate the relay
         output.set_low();
-        println!("GPIO ON (state: {})", output.is_set_high());
+        println!("GPIO #{} LOW (state: {})", BCM_GPIO_RELAY, output.is_set_high());
 
         // we wait for 1s
         thread::sleep(one_sec);
