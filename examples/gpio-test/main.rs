@@ -1,9 +1,8 @@
-use std::{thread, time, process};
+use std::{process, thread, time};
 
 use rppal::gpio::Gpio;
 
 fn main() {
-
     // define a one second time duration
     let one_sec = time::Duration::from_secs(1);
 
@@ -33,7 +32,6 @@ fn main() {
 
     // we do it 4 times
     for _ in 0..4 {
-
         // we activate the relay
         output.set_high();
         println!("GPIO ON (state: {})", output.is_set_high());
