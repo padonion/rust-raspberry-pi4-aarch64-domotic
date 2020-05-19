@@ -1,4 +1,4 @@
-use std::{process, thread, time};
+use std::{thread, time};
 
 use rppal::gpio::Gpio;
 
@@ -12,19 +12,13 @@ fn main() {
     // create the GPIO object (mutable as we want to change the output)
     let gpios = match Gpio::new() {
         Ok(gpios) => gpios,
-        Err(msg) => {
-            println!("Error: {}", msg);
-            process::exit(1);
-        }
+        Err(msg) => panic!("Error: {}", msg),
     };
 
     // retrieve the GPIO pin as an Output
     let mut output = match gpios.get(BCM_GPIO_RELAY) {
         Ok(output) => output.into_output(),
-        Err(msg) => {
-            println!("Error: {}", msg);
-            process::exit(1);
-        }
+        Err(msg) => panic!("Error: {}", msg),
     };
 
     // read the pin for confirmation
