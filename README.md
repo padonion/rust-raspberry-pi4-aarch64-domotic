@@ -32,8 +32,18 @@ scp target/aarch64-unknown-linux-gnu/debug/examples/gpio-test ubuntu@XXX.XXX.XXX
 
 and then `ssh` into your raspberry and execute it
 
-```
-./gpio-test
+```bash
+[ ubuntu: ~ ]$ ./gpio-test 
+GPIO pin : 23
+GPIO ON (state: true)
+GPIO ON (state: false)
+GPIO ON (state: true)
+GPIO ON (state: false)
+GPIO ON (state: true)
+GPIO ON (state: false)
+GPIO ON (state: true)
+GPIO ON (state: false)
+[ ubuntu: ~ ]$ 
 ```
 
 ## `ping-test` example
@@ -54,8 +64,10 @@ and then `ssh` into your raspberry and execute it
 
 > carfting ICMP packets requires privileges. But this is not a problem because our final application will run as a service.
 
-```
-sudo ./ping-test
+```bash
+[ ubuntu: ~ ]$ sudo ./ping-test 
+Received reply from 8.8.8.8 in 17.795154ms.
+[ ubuntu: ~ ]$
 ```
 
 ## final project
