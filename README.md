@@ -36,7 +36,7 @@ and then `ssh` into your raspberry and execute it
 ./gpio-test
 ```
 
-## `ping` example
+## `ping-test` example
 
 Second example will ping a server on internet. I chose 8.8.8.8 because it is Google's DNS and I know it.
 
